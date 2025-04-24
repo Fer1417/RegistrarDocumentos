@@ -1,0 +1,79 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: #fff;
+  }
+  
+  .header {
+    background: #6b278c;
+    color: white;
+    padding: 10px 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .header img {
+    height: 40px;
+  }
+  
+  .header h2 {
+    font-size: 28px;
+    margin: 0;
+    color: white;
+  }
+  
+  .header .logout {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+  }
+  
+  .search-bar {
+    display: flex;
+    justify-content: flex-end;
+    padding: 20px 30px 0 30px;
+  }
+  
+  .search-bar input[type="text"] {
+    width: 300px;
+    padding: 10px;
+    border-radius: 25px 0 0 25px;
+    border: 2px solid #6b278c;
+    outline: none;
+  }
+  
+  .search-bar button {
+    background: #6b278c;
+    border: none;
+    border-radius: 0 25px 25px 0;
+    padding: 10px 15px;
+    color: white;
+    cursor: pointer;
+  }
+  
+  .dashboard-table {
+    margin: 20px 30px;
+    width: calc(100% - 60px);
+    border-collapse: collapse;
+    font-size: 15px;
+    box-shadow: 0 4px 25px rgba(0,0,0,0.05);
+  }
+  
+  .dashboard-table th {
+    background-color: #3e245f;
+    color: white;
+    padding: 12px;
+    text-align: left;
+  }
+  
+  .dashboard-table td {
+    padding: 10px;
+    border-bottom: 1px solid #f0f0f0;
+    background: #fdfdfd;
+  }
+  
+  .dashboard-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
