@@ -3,6 +3,7 @@ import os
 from werkzeug.utils import secure_filename
 from db import mysql
 from services.ocr import extract_text_from_file, validate_document
+from tempfile import NamedTemporaryFile
 
 bp = Blueprint('upload', __name__, url_prefix='/upload')
 
@@ -37,9 +38,26 @@ def upload_document():
     if not resultado["nombre_coincide"]:
         return jsonify({"validado": False, "mensaje": "El nombre del documento no coincide con el usuario."})
 
-    if doc_type == "curp" and resultado["extraido"]["curp"]:
+    # Guardado automático
+    if doc_type == "curp" and resultado["extraido"].get("curp"):
         cursor.execute("UPDATE usuarios SET curp = %s WHERE id = %s", (resultado["extraido"]["curp"], user_id))
-        mysql.connection.commit()
 
+    elif doc_type == "rfc" and resultado["extraido"].get("rfc"):
+        cursor.execute("UPDATE usuarios SET rfc = %s WHERE id = %s", (resultado["extraido"]["rfc"], user_id))
+
+    elif doc_type == "imss" and resultado["extraido"].get("imss"):
+        cursor.execute("UPDATE usuarios SET imss = %s WHERE id = %s", (resultado["extraido"]["imss"], user_id))
+
+    elif doc_type == "fiscal" and resultado["extraido"].get("constancia_fiscal"):
+        cursor.execute("UPDATE usuarios SET constancia_fiscal = %s WHERE id = %s", ("Validado", user_id))
+
+    elif doc_type == "curso" and resultado["extraido"].get("curso"):
+        cursor.execute("INSERT INTO constancias_cursos (usuario_id, nombre_curso) VALUES (%s, %s)", (user_id, "Validado"))
+
+    elif doc_type == "cedula" and resultado["extraido"].get("cedulas"):
+        for ced in resultado["extraido"]["cedulas"]:
+            cursor.execute("INSERT IGNORE INTO cedulas_profesionales (usuario_id, numero_cedula) VALUES (%s, %s)", (user_id, ced))
+
+    mysql.connection.commit()
     cursor.close()
     return jsonify({"validado": True, "resultado": resultado})

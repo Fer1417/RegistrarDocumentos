@@ -3,6 +3,9 @@ import re
 from PIL import Image
 from pdf2image import convert_from_path
 import os
+from tempfile import NamedTemporaryFile
+
+os.environ['TESSDATA_PREFIX'] = "C:\Program Files\Tesseract-OCR\tessdata"
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 POPPLER_PATH = r"C:\Program Files\poppler-24.08.0\Library\bin"
 
@@ -22,15 +25,34 @@ def validate_document(doc_type, text, nombre_completo):
     text_upper = text.upper()
     nombre_ok = nombre_completo.upper() in text_upper
 
-    curp = None
-    if doc_type == 'curp':
-        match = re.search(r'[A-Z]{4}\d{6}[A-Z0-9]{8}', text_upper)
-        if match:
-            curp = match.group(0)
-
-    return {
+    resultado = {
         "nombre_coincide": nombre_ok,
-        "extraido": {
-            "curp": curp
-        }
+        "extraido": {}
     }
+
+    if doc_type == 'curp':
+        curp_match = re.search(r'[A-Z]{4}\d{6}[A-Z0-9]{8}', text_upper)
+        if curp_match:
+            resultado["extraido"]["curp"] = curp_match.group(0)
+
+    elif doc_type == 'rfc':
+        rfc_match = re.search(r'[A-Z]{4}\d{6}[A-Z0-9]{3}', text_upper)
+        if rfc_match:
+            resultado["extraido"]["rfc"] = rfc_match.group(0)
+
+    elif doc_type == 'imss':
+        imss_match = re.search(r'\b\d{11}\b', text_upper)
+        if imss_match:
+            resultado["extraido"]["imss"] = imss_match.group(0)
+
+    elif doc_type == 'fiscal':
+        resultado["extraido"]["constancia_fiscal"] = "OK" if nombre_ok else None
+
+    elif doc_type == 'curso':
+        resultado["extraido"]["curso"] = "Validado" if nombre_ok else None
+
+    elif doc_type == 'cedula':
+        cedula_match = re.findall(r'\b\d{7,8}\b', text_upper)
+        resultado["extraido"]["cedulas"] = cedula_match if cedula_match else []
+
+    return resultado
