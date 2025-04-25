@@ -33,7 +33,6 @@
     <tbody></tbody>
   </table>
 
-  <!-- Modal Detalles -->
   <div class="modal fade" id="userDetailsModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
@@ -44,20 +43,19 @@
         <div class="modal-body">
           <p><strong>ID:</strong> <span id="modalUserId"></span></p>
           <p><strong>Nombre:</strong> <span id="modalUserName"></span></p>
-          <ul class="list-group">
+          <ul id="modalUserFields" class="list-group">
             <li class="list-group-item"><strong>CURP:</strong> <span></span></li>
             <li class="list-group-item"><strong>RFC:</strong> <span></span></li>
             <li class="list-group-item"><strong>IMSS:</strong> <span></span></li>
             <li class="list-group-item"><strong>Situación Fiscal:</strong> <span></span></li>
             <li class="list-group-item"><strong>Cursos:</strong> <span></span></li>
             <li class="list-group-item"><strong>Cédulas:</strong> <span></span></li>
-          </ul>
+          </ul>          
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Modal Upload -->
   <div class="modal fade" id="uploadModal" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -75,6 +73,7 @@
             <div class="mb-3">
               <label for="docType" class="form-label">Tipo de documento:</label>
               <select class="form-select" name="doc_type" id="docType" required>
+                <option selected>Eligue el documento</option>
                 <option value="curp">CURP</option>
                 <option value="rfc">RFC</option>
                 <option value="imss">Número de IMSS</option>
