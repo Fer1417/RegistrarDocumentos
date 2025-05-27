@@ -1,70 +1,139 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const searchInput = document.getElementById("searchInput")
-  const tableBody = document.querySelector("#usersTable tbody")
-  let allUsers = []
+  const loginForm = document.getElementById("loginForm");
+  const searchInput = document.getElementById("searchInput");
+  const tableBody = document.querySelector("#usersTable tbody");
+  let allUsers = [];
 
   async function loadUsers() {
-    const res = await fetch("/api/users")
-    allUsers = await res.json()
-    renderTable(allUsers)
+    const res = await fetch("/api/users");
+    allUsers = await res.json();
+    renderTable(allUsers);
     searchInput.addEventListener("input", () => {
-      const filtered = allUsers.filter(u => u.nombre_completo.toLowerCase().includes(searchInput.value.toLowerCase()) || u.id.toString().includes(searchInput.value))
-      renderTable(filtered)
-    })
+      const filtered = allUsers.filter(u =>
+        u.nombre_completo.toLowerCase().includes(searchInput.value.toLowerCase()) ||
+        u.id.toString().includes(searchInput.value)
+      );
+      renderTable(filtered);
+    });
+  }
+
+  const docTypeSelect = document.getElementById("docType");
+  const cedulaOptions = document.getElementById("cedulaOptions");
+
+  if (docTypeSelect) {
+    docTypeSelect.addEventListener("change", () => {
+      if (docTypeSelect.value === "cedula") {
+        cedulaOptions.style.display = "block";
+      } else {
+        cedulaOptions.style.display = "none";
+      }
+    });
   }
 
   function renderTable(data) {
-    tableBody.innerHTML = ""
+    tableBody.innerHTML = "";
     data.forEach(u => {
-      const tr = document.createElement("tr")
+      const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${u.id}</td>
         <td>${u.nombre_completo}</td>
         <td>${u.curp || "No ingresada"}</td>
         <td>${u.rfc || "No ingresada"}</td>
-        <td><button class="btn btn-outline-primary btn-sm" onclick="showUserDetails(${u.id})"><i class="fa-solid fa-plus"></i></button></td>
+        <td><button class="btn btn-outline-primary btn-sm" onclick="showUserDetails(${u.id}, '${u.nombre_completo}')"><i class="fa-solid fa-eye"></i></button></td>
         <td><button class="btn btn-outline-secondary btn-sm" onclick="openUploadForm(${u.id}, '${u.nombre_completo}')"><i class="fa-solid fa-upload"></i></button></td>
-      `
-      tableBody.appendChild(tr)
-    })
+      `;
+      tableBody.appendChild(tr);
+    });
   }
 
-  window.showUserDetails = async function(id) {
-    const res = await fetch(`/api/users/${id}`)
-    const data = await res.json()
-    document.getElementById("modalUserId").textContent = data.id
-    document.getElementById("modalUserName").textContent = data.nombre_completo
-    const fields = document.querySelectorAll("#modalUserFields li span")
-    fields[0].textContent = data.curp || "No ingresada"
-    fields[1].textContent = data.rfc || "No ingresada"
-    fields[2].textContent = data.imss || "No ingresada"
-    fields[3].textContent = data.fiscal || "No ingresada"
-    fields[4].textContent = data.cursos || "No ingresada"
-    fields[5].textContent = data.cedulas || "No ingresada"
-    new bootstrap.Modal(document.getElementById('userDetailsModal')).show()
-  }
+  window.showUserDetails = async function(id, nombre) {
+    const res = await fetch(`/api/users/${id}`);
+    const user = await res.json();
 
-  window.openUploadForm = function(id, name) {
-    document.getElementById("uploadUserId").value = id
-    document.getElementById("uploadUserName").textContent = name
-    new bootstrap.Modal(document.getElementById('uploadModal')).show()
-  }
+    document.getElementById("modalUserId").textContent = user.id;
+    document.getElementById("modalUserName").textContent = nombre;
 
-  const uploadForm = document.getElementById("uploadForm")
+    const fields = document.querySelectorAll("#modalUserFields span");
+    const values = [
+      user.curp,
+      user.rfc,
+      user.imss,
+      user.numero_ine,
+      user.domicilio,
+      user.cursos.join(", ") || "-",
+      user.cedulas.join(", ") || "-",
+      user.regimenes.join(", ") || "-"
+    ];
+    fields.forEach((el, i) => el.textContent = values[i] || "No registrado");
+
+    const modal = new bootstrap.Modal(document.getElementById("userDetailsModal"));
+    modal.show();
+  };
+
+  window.openUploadForm = function(id, nombre) {
+    document.getElementById("uploadUserId").value = id;
+    document.getElementById("uploadUserName").textContent = nombre;
+    const modal = new bootstrap.Modal(document.getElementById("uploadModal"));
+    modal.show();
+  };
+
+  const uploadForm = document.getElementById("uploadForm");
   if (uploadForm) {
     uploadForm.addEventListener("submit", async (e) => {
-      e.preventDefault()
-      const formData = new FormData(uploadForm)
-      const res = await fetch("/upload/document", {
-        method: "POST",
-        body: formData
-      })
-      const result = await res.json()
-      alert("Resultado: " + JSON.stringify(result))
-      bootstrap.Modal.getInstance(document.getElementById("uploadModal")).hide()
-      await loadUsers()
-    })
+      e.preventDefault();
+      const form = new FormData(uploadForm);
+
+      if (document.getElementById("docType").value === "cedula") {
+        const formatoCedula = document.querySelector("input[name='cedula_tipo']:checked");
+        if (formatoCedula) {
+          form.append("formato_cedula", formatoCedula.value);
+        }
+      }
+
+      Swal.fire({
+        title: 'Procesando...',
+        html: 'Esto puede tardar unos segundos...',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      try {
+        const res = await fetch("/upload/document", {
+          method: "POST",
+          body: form
+        });
+        const result = await res.json();
+
+        if (result.validado) {
+          Swal.fire({
+            icon: "success",
+            title: "Documento validado con éxito",
+            html: "El documento se validó correctamente.",
+            showConfirmButton: true
+          }).then(() => {
+            uploadForm.reset();
+            location.reload();
+          });
+
+        } else {
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            html: ` <p>${result.mensaje || "Hubo un problema al validar el documento."}</p> `
+          });
+        }
+
+      } catch (error) {
+        Swal.fire({
+          icon: "error",
+          title: "Error interno",
+          html: `<p>No se pudo validar el documento.</p>`
+        });
+      }
+    });
   }
 
-  loadUsers()
-})
+  loadUsers();
+});

@@ -26,11 +26,13 @@ def login():
 def dashboard():
     if "admin_id" not in session:
         return redirect(url_for("auth.login"))
+
     cursor = mysql.connection.cursor()
     cursor.execute("""
-        SELECT id, CONCAT(nombre, ' ', apellido_paterno, ' ', apellido_materno) AS nombre_completo, curp, rfc
-        FROM usuarios
+        SELECT id, nombre, apellido_paterno, apellido_materno, curp, rfc FROM usuarios
     """)
     users = cursor.fetchall()
     cursor.close()
+
     return render_template("dashboard.html", users=users)
+

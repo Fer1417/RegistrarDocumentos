@@ -1,6 +1,3 @@
-#python -m venv venv
-#venv\\Scripts\\activate 
-
 from flask import Flask
 from flask import Flask,render_template
 from config import Config
@@ -8,6 +5,8 @@ from db import mysql
 from routes.auth import bp as auth_bp
 from routes.users import bp as users_bp
 from routes.upload import bp as upload_bp
+import os
+
 
 app = Flask(__name__)
 app.config.from_object(Config)
