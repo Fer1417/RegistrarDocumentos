@@ -8,11 +8,14 @@ from flask import request
 import difflib
 import platform
 
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-os.environ['TESSDATA_PREFIX'] = r"C:\Program Files\Tesseract-OCR\tessdata"
 if platform.system() == "Windows":
+    pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+    os.environ['TESSDATA_PREFIX'] = r"C:\Program Files\Tesseract-OCR\tessdata"
     POPPLER_PATH = r"C:\Program Files\poppler-24.08.0\Library\bin"
 else:
+    # En Linux, tesseract y poppler están en el PATH por defecto si los instalaste con apt
+    pytesseract.pytesseract.tesseract_cmd = 'tesseract'
+    os.environ['TESSDATA_PREFIX'] = '/usr/share/tesseract-ocr/4.00/tessdata/'
     POPPLER_PATH = None
 
 REGIMENES_VALIDOS = {
