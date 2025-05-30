@@ -6,10 +6,14 @@ import re
 from unidecode import unidecode
 from flask import request
 import difflib
+import platform
 
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 os.environ['TESSDATA_PREFIX'] = r"C:\Program Files\Tesseract-OCR\tessdata"
-POPPLER_PATH = r"C:\Program Files\poppler-24.08.0\Library\bin"
+if platform.system() == "Windows":
+    POPPLER_PATH = r"C:\Program Files\poppler-24.08.0\Library\bin"
+else:
+    POPPLER_PATH = None
 
 REGIMENES_VALIDOS = {
     "REGIMEN GENERAL DE LEY PERSONAS MORALES",
