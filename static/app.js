@@ -21,14 +21,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const cedulaOptions = document.getElementById("cedulaOptions");
 
   if (docTypeSelect) {
-    docTypeSelect.addEventListener("change", () => {
-      if (docTypeSelect.value === "cedula") {
-        cedulaOptions.style.display = "block";
-      } else {
-        cedulaOptions.style.display = "none";
-      }
-    });
-  }
+  docTypeSelect.addEventListener("change", () => {
+    if (docTypeSelect.value === "cedula") {
+      cedulaOptions.style.display = "block";
+      document.querySelectorAll("input[name='cedula_tipo']").forEach(input => {
+        input.required = true;
+      });
+    } else {
+      cedulaOptions.style.display = "none";
+      document.querySelectorAll("input[name='cedula_tipo']").forEach(input => {
+        input.required = false;
+      });
+    }
+  });
+}
+
 
   function renderTable(data) {
     tableBody.innerHTML = "";

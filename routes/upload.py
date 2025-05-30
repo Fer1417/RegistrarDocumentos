@@ -39,7 +39,7 @@ def upload_document():
     if not resultado["nombre_coincide"] and doc_type not in ["domicilio", "regimen"]:
         return jsonify({
             "validado": False,
-            "mensaje": "El nombre del documento no coincide con el usuario.",
+            "mensaje": "El nombre del documento no coincide con el usuario o el documento no tiene el formato correcto.",
             "nombre_detectado": resultado["extraido"].get("nombre_detectado", None)
         })
 
