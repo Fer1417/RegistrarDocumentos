@@ -6,17 +6,10 @@ import re
 from unidecode import unidecode
 from flask import request
 import difflib
-import platform
 
-if platform.system() == "Windows":
-    pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-    os.environ['TESSDATA_PREFIX'] = r"C:\Program Files\Tesseract-OCR\tessdata"
-    POPPLER_PATH = r"C:\Program Files\poppler-24.08.0\Library\bin"
-else:
-    # En Linux, tesseract y poppler están en el PATH por defecto si los instalaste con apt
-    pytesseract.pytesseract.tesseract_cmd = 'tesseract'
-    os.environ['TESSDATA_PREFIX'] = '/usr/share/tesseract-ocr/4.00/tessdata/'
-    POPPLER_PATH = None
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+os.environ['TESSDATA_PREFIX'] = r"C:\Program Files\Tesseract-OCR\tessdata"
+POPPLER_PATH = r"C:\Program Files\poppler-24.08.0\Library\bin"
 
 REGIMENES_VALIDOS = {
     "REGIMEN GENERAL DE LEY PERSONAS MORALES",
@@ -91,9 +84,24 @@ def validate_document(doc_type, text, nombre_completo, formato_cedula=""):
             resultado["extraido"]["imss"] = imss_match.group(0)
 
     elif doc_type == 'curso':
-        lines = text_upper.splitlines()
-        cursos = [line.strip() for line in lines if nombre_upper in line]
-        resultado["extraido"]["curso"] = cursos[0] if cursos else None
+        lines = [l.strip() for l in text_upper.splitlines() if l.strip()]
+        nombre_ok = nombre_upper in unidecode(" ".join(lines))
+        curso_detectado = None
+
+        for i, line in enumerate(lines):
+            if "CURSO" in line:
+                posibles = lines[i+1:i+4]
+                for p in posibles:
+                    limpio = unidecode(re.sub(r'[^A-Z\s]', '', p.upper())).strip()
+                    bloques = re.findall(r'[A-Z]{3,}', limpio)
+                    if len(" ".join(bloques)) >= 10:
+                        curso_detectado = " ".join(bloques)
+                        break
+                if curso_detectado:
+                    break
+
+        resultado["extraido"]["curso"] = curso_detectado
+        resultado["nombre_coincide"] = nombre_ok
 
     elif doc_type == 'cedula':
         formato = request.form.get("formato_cedula", "")
@@ -277,18 +285,30 @@ def validate_document(doc_type, text, nombre_completo, formato_cedula=""):
 
     elif doc_type == 'domicilio':
         lines = [l.strip() for l in text_upper.splitlines() if l.strip()]
-        nombre_parts = nombre_upper.split()
-        posibles_indices = []
+        domicilio_lines = []
+        captura = False
 
-        for i, line in enumerate(lines):
-            matches = sum(1 for part in nombre_parts if part in line)
-            if matches >= 0:  
-                posibles_indices.append(i)
+        for line in lines:
+            if re.search(r'COMIS[ÍI]?[OÓ]N\s+FEDERAL\s+DE\s+ELECTRICIDAD', unidecode(line)):
+                captura = True
+                continue
+            if captura:
+                if 'NO. DE SERVICIO' in line:
+                    break
+                if re.search(r'\$|PESOS|TOTAL|M\.N\.|=', line):
+                    continue
 
-        if posibles_indices:
-            idx = posibles_indices[0]
-            domicilio_lines = lines[idx+1:idx+5]
-            resultado["extraido"]["domicilio"] = " ".join(domicilio_lines)
-        else:
-            resultado["extraido"]["domicilio"] = ""
+                limpio = re.sub(r'[^A-Z0-9ÁÉÍÓÚÑ,\.\s]', '', line).strip()
+                partes = re.split(r'(\d{2,}\s+[A-Z]{2,}.*?)\s+(?=\d{2,}\s+[A-Z]{2,})', limpio)
+                if partes:
+                    domicilio_lines.extend([p.strip() for p in partes if p.strip()])
+                else:
+                    domicilio_lines.append(limpio)
+
+        domicilio_texto = "\n".join(domicilio_lines)
+
+        resultado["extraido"]["domicilio"] = domicilio_texto
+        resultado["extraido"]["nombre_detectado"] = None
+        resultado["nombre_coincide"] = True
+        
     return resultado
